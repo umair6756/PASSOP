@@ -16,6 +16,9 @@ jobs:
       FRONTEND_DIR: ./frontend
       BACKEND_DIR: ./backend
 
+
+      REGION: us-east1
+
       FRONTEND_PORT: 5173
       BACKEND_PORT: 3000
 
@@ -55,26 +58,28 @@ jobs:
           gcloud auth configure-docker --quiet
 
 
-     
-      # - PUSH FRONTEND IMAGE TO GCR (NEW)
 
-      - name: Push Frontend Image to GCR
+
+      # - PUSH FRONTEND IMAGE TO ARTIFACT REGISTRY
+      - name: Push Frontend Image
         run: |
-          FRONTEND_GCR="gcr.io/${{ secrets.GCP_PROJECT_ID }}/frontend:${{ github.sha }}"
-          docker tag $FRONTEND_IMAGE $FRONTEND_GCR
-          docker push $FRONTEND_GCR
-          echo "FRONTEND_GCR=$FRONTEND_GCR" >> $GITHUB_ENV
+          FRONTEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.FRONTEND_REPO }}/frontend:${{ github.sha }}"
+          docker tag $FRONTEND_IMAGE $FRONTEND_AR
+          docker push $FRONTEND_AR
+          echo "FRONTEND_AR=$FRONTEND_AR" >> $GITHUB_ENV
+
 
 
      
-      # - PUSH BACKEND IMAGE TO GCR (NEW)
     
-      - name: Push Backend Image to GCR
+      # - PUSH BACKEND IMAGE TO ARTIFACT REGISTRY
+      - name: Push Backend Image
         run: |
-          BACKEND_GCR="gcr.io/${{ secrets.GCP_PROJECT_ID }}/backend:${{ github.sha }}"
-          docker tag $BACKEND_IMAGE $BACKEND_GCR
-          docker push $BACKEND_GCR
-          echo "BACKEND_GCR=$BACKEND_GCR" >> $GITHUB_ENV
+           BACKEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.BACKEND_REPO }}/backend:${{ github.sha }}"
+           docker tag $BACKEND_IMAGE $BACKEND_AR
+           docker push $BACKEND_AR
+           echo "BACKEND_AR=$BACKEND_AR" >> $GITHUB_ENV
+
 
       
       #  Start containers 
