@@ -41,6 +41,41 @@ jobs:
           docker build -t $BACKEND_IMAGE $BACKEND_DIR
           echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> $GITHUB_ENV
 
+
+            
+      # AUTHENTICATE TO GOOGLE CLOUD 
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure gcloud Docker auth
+        run: |
+          gcloud auth configure-docker --quiet
+
+
+     
+      # - PUSH FRONTEND IMAGE TO GCR (NEW)
+
+      - name: Push Frontend Image to GCR
+        run: |
+          FRONTEND_GCR="gcr.io/${{ secrets.GCP_PROJECT_ID }}/frontend:${{ github.sha }}"
+          docker tag $FRONTEND_IMAGE $FRONTEND_GCR
+          docker push $FRONTEND_GCR
+          echo "FRONTEND_GCR=$FRONTEND_GCR" >> $GITHUB_ENV
+
+
+     
+      # - PUSH BACKEND IMAGE TO GCR (NEW)
+    
+      - name: Push Backend Image to GCR
+        run: |
+          BACKEND_GCR="gcr.io/${{ secrets.GCP_PROJECT_ID }}/backend:${{ github.sha }}"
+          docker tag $BACKEND_IMAGE $BACKEND_GCR
+          docker push $BACKEND_GCR
+          echo "BACKEND_GCR=$BACKEND_GCR" >> $GITHUB_ENV
+
       
       #  Start containers 
       
