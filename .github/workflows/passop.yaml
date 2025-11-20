@@ -88,11 +88,10 @@ jobs:
       
       - name: Install Nuclei
         run: |
-          wget https://github.com/projectdiscovery/nuclei/releases/latest/download/nuclei-linux-amd64.zip -O nuclei.zip
-          unzip -q nuclei.zip -d .
-          sudo mv nuclei /usr/local/bin/nuclei
-          nuclei -version
+          curl -sSfL https://raw.githubusercontent.com/projectdiscovery/nuclei/main/install.sh | sudo sh
 
+      - name: Verify Nuclei
+        run: nuclei -version
       - name: Run Nuclei Templates
         run: |
           
