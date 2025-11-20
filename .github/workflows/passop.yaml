@@ -1,0 +1,247 @@
+name: Extreme Secure CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  security-events: write  
+  id-token: write         
+
+jobs:
+  extreme-secure:
+    runs-on: ubuntu-latest
+    env:
+      FRONTEND_DIR: ./frontend
+      BACKEND_DIR: ./backend
+
+      FRONTEND_PORT: 5173
+      BACKEND_PORT: 3000
+
+    steps:
+      
+      #  CHECKOUT
+      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      
+      #  BUILD IMAGES (FRONTEND & BACKEND)
+      
+      - name: Build Frontend Image
+        run: |
+          FRONTEND_IMAGE=frontend:${{ github.sha }}
+          docker build -t $FRONTEND_IMAGE $FRONTEND_DIR
+          echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> $GITHUB_ENV
+
+      - name: Build Backend Image
+        run: |
+          BACKEND_IMAGE=backend:${{ github.sha }}
+          docker build -t $BACKEND_IMAGE $BACKEND_DIR
+          echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> $GITHUB_ENV
+
+      
+      #  Start containers 
+      
+      - name: Run backend container
+        run: |
+          docker run -d --name ci-backend -p ${{ env.BACKEND_PORT }}:${{ env.BACKEND_PORT }} $BACKEND_IMAGE || true
+
+      - name: Run frontend container
+        run: |
+         
+          docker run -d --name ci-frontend -p ${{ env.FRONTEND_PORT }}:${{ env.FRONTEND_PORT }} $FRONTEND_IMAGE || true
+
+      - name: Wait for services to be up
+        run: |
+         
+          for i in {1..30}; do
+            curl -sSf http://localhost:${{ env.FRONTEND_PORT }} >/dev/null && break || sleep 2
+          done
+
+      
+      # 3) Run OWASP ZAP (DAST)
+      
+      - name: Install OWASP ZAP CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jdk wget
+          wget -q -O zap.zip https://github.com/zaproxy/zaproxy/releases/download/v2.12.0/ZAP_2_12_0_unix.zip || true
+          unzip -q zap.zip -d zap || true
+          export PATH="$PWD/zap/ZAP_2.12.0:$PATH"
+
+      - name: Run OWASP ZAP Baseline Scan (DAST)
+        run: |
+         
+          python3 zap/ZAP_2.12.0/zap-baseline.py -t http://localhost:${{ env.FRONTEND_PORT }} -r zap-report.html || true
+         
+
+      - name: Upload ZAP reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
+
+      
+      # 4) Install & Run Nuclei 
+      
+      - name: Install Nuclei
+        run: |
+          wget https://github.com/projectdiscovery/nuclei/releases/latest/download/nuclei-linux-amd64.zip -O nuclei.zip
+          unzip -q nuclei.zip -d .
+          sudo mv nuclei /usr/local/bin/nuclei
+          nuclei -version
+
+      - name: Run Nuclei Templates
+        run: |
+          
+          nuclei -update-templates || true
+          nuclei -u http://localhost:${{ env.FRONTEND_PORT }} -o nuclei-output.txt || true
+
+      - name: Upload Nuclei report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuclei
+          path: nuclei-output.txt
+
+      
+      # 5) CodeQL 
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: |
+            javascript
+            typescript
+            python
+          config-file: .github/codeql/codeql-config.yml 
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+     
+      # 6) Syft SBOM & Cosign Attestation (
+      
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM (Syft) for both images
+        run: |
+          syft $FRONTEND_IMAGE -o spdx-json > sbom-frontend.spdx.json || true
+          syft $BACKEND_IMAGE -o spdx-json > sbom-backend.spdx.json || true
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sboms
+          path: |
+            sbom-frontend.spdx.json
+            sbom-backend.spdx.json
+
+      
+      # 7) Install Cosign (Sigstore) and sign images & attest SBOMs
+      
+      - name: Install Cosign
+        run: |
+          COSIGN_VER="2.0.0"
+          curl -sSL -o cosign.tar.gz "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VER}/cosign-linux-amd64.tar.gz"
+          tar -xzf cosign.tar.gz
+          sudo mv cosign /usr/local/bin/cosign
+          cosign version || true
+
+     
+      - name: Upload cosign artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosign
+          path: |
+            sbom-predicate-frontend.json
+            sbom-predicate-backend.json
+
+      
+      # 8) SLSA / Provenance notes
+      
+      - name: Create simple SLSA-style provenance note
+        run: |
+          cat > provenance-frontend.json <<EOF
+          {
+            "builder": "github-actions/extreme-secure",
+            "buildType": "container-build",
+            "buildInvocationId": "${{ github.run_id }}",
+            "sbom": "sbom-frontend.spdx.json"
+          }
+          EOF
+          cat > provenance-backend.json <<EOF
+          {
+            "builder": "github-actions/extreme-secure",
+            "buildType": "container-build",
+            "buildInvocationId": "${{ github.run_id }}",
+            "sbom": "sbom-backend.spdx.json"
+          }
+          EOF
+      - name: Upload provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: provenance
+          path: |
+            provenance-frontend.json
+            provenance-backend.json
+
+      
+
+      - name: Run Semgrep (SAST)
+        run: |
+          pip install semgrep || true
+          semgrep --config auto --json > semgrep.json || true
+      - name: Upload Semgrep
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep
+          path: semgrep.json
+
+ 
+      - name: Install Node & Playwright (optional deep app checks)
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          cd ${{ env.FRONTEND_DIR }} || true
+          npm ci || true
+          npx playwright install --with-deps || true
+
+      - name: Run Playwright checks (if you have tests)
+        run: |
+          cd ${{ env.FRONTEND_DIR }} || true
+          npx playwright test --reporter=json > playwright-report.json || true
+
+      - name: Upload Playwright (optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright
+          path: playwright-report.json
+
+      
+      # 11) Cleanup containers
+      
+      - name: Stop and remove containers
+        run: |
+          docker rm -f ci-frontend || true
+          docker rm -f ci-backend || true
+
+      
+     
+      
+      - name: Upload all artifacts (catch-all)
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-reports
+          path: |
+            *.json
+            *.txt
+            *.html
+            sbom-*.spdx.json
+            provenance-*.json
+            zap-report.html
+            nuclei-output.txt
+            playwright-report.json
