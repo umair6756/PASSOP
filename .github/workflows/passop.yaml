@@ -63,11 +63,11 @@ jobs:
       # - PUSH FRONTEND IMAGE TO ARTIFACT REGISTRY
       - name: Push Frontend Image
         run: |
-          FRONTEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.FRONTEND_REPO }}/frontend:${{ github.sha }}"
-          docker tag $FRONTEND_IMAGE $FRONTEND_AR
-          docker push $FRONTEND_AR
-          echo "FRONTEND_AR=$FRONTEND_AR" >> $GITHUB_ENV
-
+            RONTEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/frontend:${{ github.sha }}"
+            docker tag $FRONTEND_IMAGE $FRONTEND_AR
+            docker push $FRONTEND_AR
+            echo "FRONTEND_AR=$FRONTEND_AR" >> $GITHUB_ENV
+ 
 
 
      
@@ -75,10 +75,10 @@ jobs:
       # - PUSH BACKEND IMAGE TO ARTIFACT REGISTRY
       - name: Push Backend Image
         run: |
-           BACKEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.BACKEND_REPO }}/backend:${{ github.sha }}"
-           docker tag $BACKEND_IMAGE $BACKEND_AR
-           docker push $BACKEND_AR
-           echo "BACKEND_AR=$BACKEND_AR" >> $GITHUB_ENV
+             BACKEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/backend:${{ github.sha }}"
+             docker tag $BACKEND_IMAGE $BACKEND_AR
+             docker push $BACKEND_AR
+             echo "BACKEND_AR=$BACKEND_AR" >> $GITHUB_ENV
 
 
       
