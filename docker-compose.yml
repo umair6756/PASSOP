@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      # dockerfile: Dockerfile.backend
+    container_name: password-backend
+    ports:
+      - "3000:3000"
+    environment:
+      MONGO_URI: "mongodb://mongo:27017"
+      DB_NAME: "passworddb"
+    depends_on:
+      - mongo
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      # dockerfile: Dockerfile.frontend
+    container_name: password-frontend
+    ports:
+      - "5173:80"
+    restart: always
+
+  mongo:
+    image: mongo:6.0
+    container_name: password-mongo
+    ports:
+      - "27015:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+volumes:
+  mongo_data:
