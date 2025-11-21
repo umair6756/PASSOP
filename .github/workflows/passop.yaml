@@ -80,6 +80,11 @@ jobs:
              docker push $BACKEND_AR
              echo "BACKEND_AR=$BACKEND_AR" >> $GITHUB_ENV
 
+      - name: Install GKE Auth Plugin
+        run: |
+           sudo apt-get update -y
+           sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+
 
 
       # Get GKE Credentials
