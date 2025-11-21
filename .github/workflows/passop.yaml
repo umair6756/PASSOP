@@ -1,4 +1,4 @@
-name: Extreme Secure CI Pipeline
+name: PASSOP CI CD Pipeline
 
 on:
   push:
@@ -82,22 +82,30 @@ jobs:
 
 
 
-   # -----------------------------
       # Get GKE Credentials
-      # -----------------------------
+
       - name: Get GKE credentials
         run: |
 
 
           gcloud container clusters get-credentials hafiz-cluster --region ${{ env.REGION }} --project ${{ secrets.GCP_PROJECT_ID }}
 
-      # -----------------------------
       # Deploy to Kubernetes
-      # -----------------------------
+
       - name: Deploy to GKE
         run: |
-          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/deployment.yaml
-          kubectl apply -f k8s/
+
+           sed -i "s|FRONTEND_IMAGE_PLACEHOLDER|$FRONTEND_AR|g" k8s/frontend-deployment.yaml
+
+
+           sed -i "s|BACKEND_IMAGE_PLACEHOLDER|$BACKEND_AR|g" k8s/backend-deployment.yaml
+ 
+           kubectl apply -f k8s/
+
+ 
+           kubectl rollout status deployment/frontend-deployment
+           kubectl rollout status deployment/backend-deployment
+
       
       #  Start containers 
       
