@@ -64,7 +64,7 @@ jobs:
       - name: Push Frontend Image
         run: |
             RONTEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/frontend:${{ github.sha }}"
-            # docker tag $FRONTEND_IMAGE $FRONTEND_AR
+            docker tag $FRONTEND_IMAGE $FRONTEND_AR
             docker push $FRONTEND_AR
             echo "FRONTEND_AR=$FRONTEND_AR" >> $GITHUB_ENV
  
