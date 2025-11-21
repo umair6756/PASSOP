@@ -90,7 +90,7 @@ jobs:
 
           sudo apt-get update && sudo apt-get install google-cloud-cli
 
-          gcloud components install gke-gcloud-auth-plugin
+          apt install gke-gcloud-auth-plugin
 
       # Get GKE Credentials
 
