@@ -92,6 +92,8 @@ jobs:
              echo "BACKEND_AR=$BACKEND_AR" >> $GITHUB_ENV
 
 
+      - name: Install GKE Auth Plugin
+        run: gcloud components install gke-gcloud-auth-plugin
       # Get GKE Credentials
 
       - name: Get GKE credentials
