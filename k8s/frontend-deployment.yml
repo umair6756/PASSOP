@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: passop-mongo-frontend # You will build this locally
+          image: FRONTEND_IMAGE_PLACEHOLDER
           imagePullPolicy: Never
           ports:
             - containerPort: 80
