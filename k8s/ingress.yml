@@ -50,6 +50,7 @@ metadata:
     kubernetes.io/ingress.class: "gce"    # Required for GKE
 spec:
   rules:
+    - host: mern.local
     -   http:
         paths:
 
