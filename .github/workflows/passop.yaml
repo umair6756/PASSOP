@@ -64,7 +64,6 @@ jobs:
       - name: Push Frontend Image
         run: |
             RONTEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/frontend:${{ github.sha }}"
-            docker tag $FRONTEND_IMAGE $FRONTEND_AR
             docker push $FRONTEND_AR
             echo "FRONTEND_AR=$FRONTEND_AR" >> $GITHUB_ENV
  
@@ -76,7 +75,6 @@ jobs:
       - name: Push Backend Image
         run: |
              BACKEND_AR="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/backend:${{ github.sha }}"
-             docker tag $BACKEND_IMAGE $BACKEND_AR
              docker push $BACKEND_AR
              echo "BACKEND_AR=$BACKEND_AR" >> $GITHUB_ENV
 
