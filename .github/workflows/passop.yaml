@@ -115,8 +115,8 @@ jobs:
            kubectl apply -f k8s/
 
  
-           kubectl rollout status deployment/frontend-deployment
-           kubectl rollout status deployment/backend-deployment
+           kubectl rollout status deployment/frontend
+           kubectl rollout status deployment/backendt
 
       
       #  Start containers 
