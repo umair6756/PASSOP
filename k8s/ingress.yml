@@ -47,14 +47,14 @@ kind: Ingress
 metadata:
   name: mern-ingress
   annotations:
-    kubernetes.io/ingress.class: "gce"    # Required for GKE
+    kubernetes.io/ingress.class: "gce"
 spec:
   rules:
     - host: mern.local
-    -   http:
+      http:
         paths:
 
-          # Frontend 
+          # Frontend
           - path: /
             pathType: Prefix
             backend:
