@@ -15,7 +15,7 @@ spec:
       containers:
         - name: backend
           image: BACKEND_IMAGE_PLACEHOLDER  # You will build this locally
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
