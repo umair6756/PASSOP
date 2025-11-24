@@ -264,9 +264,11 @@ const Manager = () => {
     const [showStrength, setShowStrength] = useState(false)
     const [darkMode, setDarkMode] = useState(false)
 
+    const apiUrl = process.env.REACT_APP_API_URL;
+
     const getPasswords = async () => {
         try {
-            let req = await fetch("http://localhost:3000/")
+            let req = await fetch(`${apiUrl}/`)
             let passwords = await req.json()
             setPasswordArray(passwords)
             setFilteredPasswords(passwords)
