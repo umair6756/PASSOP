@@ -28,9 +28,13 @@ steps:
 
 # **Security Tool 1: ESLint**
 - name: "gcr.io/cloud-builders/npm"
-  id: "Run ESLint"
-  entrypoint: npm
-  args: ["run", "lint", "--if-present"]
+  id: "Run ESLint (Frontend)"
+  entrypoint: bash
+  args:
+    - "-c"
+    - |
+      cd frontend
+      npm run lint --if-present
 
 # **Security Tool 2: Snyk Vulnerability Scan**
 - name: "gcr.io/cloud-builders/docker"
