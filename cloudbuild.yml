@@ -1,0 +1,147 @@
+ 
+# CI Pipeline with Security Tools + Artifact Registry Push
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: "E2_HIGHCPU_8"
+  dynamicSubstitutions: true
+
+substitutions:
+  _FRONTEND_IMAGE: "frontend-app"
+  _BACKEND_IMAGE: "backend-app"
+  _REGION: "us-central1"
+  _REPO: "passop-repo"            # Artifact Registry repository
+
+steps:
+
+ 
+# 1. Install Security Tools
+ 
+- name: "gcr.io/cloud-builders/npm"
+  id: "Install Dependencies"
+  entrypoint: "bash"
+  args:
+    - "-c"
+    - |
+      cd backend && npm install
+      cd ../frontend && npm install
+
+# **Security Tool 1: ESLint**
+- name: "gcr.io/cloud-builders/npm"
+  id: "Run ESLint"
+  entrypoint: npm
+  args: ["run", "lint", "--if-present"]
+
+# **Security Tool 2: Snyk Vulnerability Scan**
+- name: "gcr.io/cloud-builders/docker"
+  id: "Snyk Scan"
+  entrypoint: "bash"
+  args:
+    - "-c"
+    - |
+      docker run --rm -v $(pwd):/project snyk/snyk-cli test --all-projects
+
+# **Security Tool 3: Trivy Scan of Source Code**
+- name: "aquasec/trivy"
+  id: "Trivy Source Scan"
+  entrypoint: "trivy"
+  args:
+    - "fs"
+    - "--exit-code"
+    - "0"
+    - "--severity"
+    - "HIGH,CRITICAL"
+    - "."
+
+# **Security Tool 4: NPM Audit**
+- name: "gcr.io/cloud-builders/npm"
+  id: "NPM Audit"
+  entrypoint: bash
+  args:
+    - "-c"
+    - |
+      cd backend && npm audit --audit-level=high || true
+      cd ../frontend && npm audit --audit-level=high || true
+
+# **Security Tool 5: Semgrep Code Scan**
+- name: "returntocorp/semgrep"
+  id: "Semgrep Scan"
+  args: ["--config", "auto", "."]
+
+# **Security Tool 6: Checkov IaC Scan (optional if IaC present)**
+- name: "bridgecrew/checkov"
+  id: "Checkov IaC Scan"
+  args: ["--directory", "."]
+
+ 
+# 2. Run Unit Tests
+ 
+- name: "gcr.io/cloud-builders/npm"
+  id: "Run Tests"
+  entrypoint: bash
+  args:
+    - "-c"
+    - |
+      cd backend && npm test --if-present
+      cd ../frontend && npm test --if-present
+
+ 
+# 3. Build Docker Images 
+ 
+- name: "gcr.io/cloud-builders/docker"
+  id: "Build Frontend Image"
+  args:
+    [
+      "build",
+      "-t",
+      "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_FRONTEND_IMAGE:$COMMIT_SHA",
+      "./frontend"
+    ]
+
+- name: "gcr.io/cloud-builders/docker"
+  id: "Build Backend Image"
+  args:
+    [
+      "build",
+      "-t",
+      "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_BACKEND_IMAGE:$COMMIT_SHA",
+      "./backend"
+    ]
+
+ 
+# 4. Security Scan Docker Images
+ 
+# **Security Tool 7: Trivy Image Scan**
+- name: "aquasec/trivy"
+  id: "Trivy Image Scan"
+  entrypoint: bash
+  args:
+    - "-c"
+    - |
+      trivy image --severity HIGH,CRITICAL $_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_FRONTEND_IMAGE:$COMMIT_SHA
+      trivy image --severity HIGH,CRITICAL $_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_BACKEND_IMAGE:$COMMIT_SHA
+
+ 
+# 5. Push to Artifact Registry
+ 
+- name: "gcr.io/cloud-builders/docker"
+  id: "Push Frontend Image"
+  args:
+    [
+      "push",
+      "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_FRONTEND_IMAGE:$COMMIT_SHA"
+    ]
+
+- name: "gcr.io/cloud-builders/docker"
+  id: "Push Backend Image"
+  args:
+    [
+      "push",
+      "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_BACKEND_IMAGE:$COMMIT_SHA"
+    ]
+
+images:
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_FRONTEND_IMAGE:$COMMIT_SHA"
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_BACKEND_IMAGE:$COMMIT_SHA"
+
+timeout: "1200s"
