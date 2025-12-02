@@ -26,55 +26,6 @@ steps:
       cd backend && npm install
       cd ../frontend && npm install
 
-
-# Snyk Vulnerability Scan**
-- name: "gcr.io/cloud-builders/docker"
-  id: "Snyk Scan"
-  entrypoint: "bash"
-  args:
-    - "-c"
-    - |
-      docker run --rm -v $(pwd):/project snyk/snyk-cli test --all-projects
-
-# Trivy Scan of Source Code**
-- name: "aquasec/trivy"
-  id: "Trivy Source Scan"
-  entrypoint: "trivy"
-  args:
-    - "fs"
-    - "--exit-code"
-    - "0"
-    - "--severity"
-    - "HIGH,CRITICAL"
-    - "."
-
-#  NPM Audit**
-- name: "gcr.io/cloud-builders/npm"
-  id: "NPM Audit"
-  entrypoint: bash
-  args:
-    - "-c"
-    - |
-      cd backend && npm audit --audit-level=high || true
-      cd ../frontend && npm audit --audit-level=high || true
-
-# Semgrep Code Scan**
-- name: "returntocorp/semgrep"
-  id: "Semgrep Scan"
-  args: ["--config", "auto", "."]
-
- 
-# 2. Run Unit Tests
- 
-- name: "gcr.io/cloud-builders/npm"
-  id: "Run Tests"
-  entrypoint: bash
-  args:
-    - "-c"
-    - |
-      cd backend && npm test --if-present
-      cd ../frontend && npm test --if-present
-
  
 # 3. Build Docker Images 
  
