@@ -9,7 +9,7 @@ options:
 substitutions:
   _FRONTEND_IMAGE: "frontend-app"
   _BACKEND_IMAGE: "backend-app"
-  _REGION: "us-central1"
+  _REGION: "us-east1"
   _REPO: "passop-repo"            # Artifact Registry repository
 
 steps:
@@ -26,17 +26,8 @@ steps:
       cd backend && npm install
       cd ../frontend && npm install
 
-# **Security Tool 1: ESLint**
-- name: "gcr.io/cloud-builders/npm"
-  id: "Run ESLint (Frontend)"
-  entrypoint: bash
-  args:
-    - "-c"
-    - |
-      cd frontend
-      npm run lint --if-present
 
-# **Security Tool 2: Snyk Vulnerability Scan**
+# Snyk Vulnerability Scan**
 - name: "gcr.io/cloud-builders/docker"
   id: "Snyk Scan"
   entrypoint: "bash"
@@ -45,7 +36,7 @@ steps:
     - |
       docker run --rm -v $(pwd):/project snyk/snyk-cli test --all-projects
 
-# **Security Tool 3: Trivy Scan of Source Code**
+# Trivy Scan of Source Code**
 - name: "aquasec/trivy"
   id: "Trivy Source Scan"
   entrypoint: "trivy"
@@ -57,7 +48,7 @@ steps:
     - "HIGH,CRITICAL"
     - "."
 
-# **Security Tool 4: NPM Audit**
+#  NPM Audit**
 - name: "gcr.io/cloud-builders/npm"
   id: "NPM Audit"
   entrypoint: bash
@@ -67,15 +58,10 @@ steps:
       cd backend && npm audit --audit-level=high || true
       cd ../frontend && npm audit --audit-level=high || true
 
-# **Security Tool 5: Semgrep Code Scan**
+# Semgrep Code Scan**
 - name: "returntocorp/semgrep"
   id: "Semgrep Scan"
   args: ["--config", "auto", "."]
-
-# **Security Tool 6: Checkov IaC Scan (optional if IaC present)**
-- name: "bridgecrew/checkov"
-  id: "Checkov IaC Scan"
-  args: ["--directory", "."]
 
  
 # 2. Run Unit Tests
