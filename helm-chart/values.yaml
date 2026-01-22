@@ -16,4 +16,5 @@ database:
   image:
     repository: mongo
     tag: "6.0"
+  mongo-url: mongodb://mongo:27017
   port: 27017
