@@ -4,4 +4,4 @@ metadata:
   name: backend-config
 data:
   DB_NAME: "passworddb"
-  MONGO_URI: "mongodb://mongo-service:27017"
+  MONGO_URI: "{{ .Values.database.mongo-url }}"
