@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend
+  name: "{{ .Release.Name }}-backend"
 spec:
-  replicas: 1
+  replicas: {{ .Values.backend.replicaCount }}
   selector:
     matchLabels:
       app: backend
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: BACKEND_IMAGE_PLACEHOLDER  # You will build this locally
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"  # You will build this locally
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -39,5 +39,5 @@ spec:
   selector:
     app: backend
   ports:
-    - port: 3000
-      targetPort: 3000
+    - port: {{ .Values.backend.port }}
+      targetPort: {{ .Values.backend.port }}

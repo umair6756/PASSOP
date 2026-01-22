@@ -1,0 +1,19 @@
+frontend:
+  replicaCount: 2
+  image:
+    repository: umair6787/passop-frontend
+    tag: latest
+  port: 80
+
+backend:
+  replicaCount: 2
+  image:
+    repository: umair6787/passop-backend
+    tag: latest
+  port: 3000
+
+database:
+  image:
+    repository: mongo
+    tag: "6.0"
+  port: 27017

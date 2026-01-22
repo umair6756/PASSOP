@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: "{{ .Release.Name }}-frontend"
 spec:
-  replicas: 1
+  replicas: {{ .Values.frontend.replicaCount }}
   selector:
     matchLabels:
       app: frontend
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: FRONTEND_IMAGE_PLACEHOLDER
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -31,5 +31,5 @@ spec:
   selector:
     app: frontend
   ports:
-    - port: 80
-      targetPort: 80
+    - port: {{ .Values.frontend.port }}
+      targetPort: {{ .Values.frontend.port }}
